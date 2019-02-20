@@ -332,7 +332,7 @@ class PlotSettings(Widget):
         builder.add_space()
         builder.add_slider(label='Resolution', option=builder.context.options['resolution'], minimum=10, maximum=100, interval=2)
         builder.add_space()
-        builder.add_combobox(label='Color Map', items=builder.context.color_maps.values(), option=builder.context.options['cmap_idx'])
+        builder.add_combobox(label='Color Map', items=builder.context.color_maps, option=builder.context.options['cmap_idx'])
         builder.add_stretch()
         
 class Main(ApplicationWindow):
@@ -346,13 +346,13 @@ class Main(ApplicationWindow):
         self.options['resolution'] = Option(20, self.redraw)
         self.options['cmap_idx'] = Option(0, self.redraw)
         self.options['plotting_function'] = Option('x**2 + y**2')
-        self.color_maps = {
-            0 : 'viridis',
-            1 : 'plasma',
-            2 : 'inferno',
-            3 : 'magma',
-            4 : 'jet',
-            5 : 'coolwarm'}
+        self.color_maps = [
+            'viridis',
+            'plasma',
+            'inferno',
+            'magma',
+            'jet',
+            'coolwarm']
 
     def _build_sidebar(self, builder):
         builder.add_textbox(label=None, prefix='Function to plot', option=self.options['plotting_function'])
