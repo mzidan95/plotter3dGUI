@@ -195,6 +195,18 @@ class WidgetBuilder(object):
         if postfix:
             postfix_widget = QtWidgets.QLabel(postfix)
             row_layout.addWidget(postfix_widget)
+    
+    def add_group(self, label, content):
+        group_widget = QtWidgets.QGroupBox(label)
+        self._add_widget(group_widget)
+
+        group_layout = QtWidgets.QVBoxLayout()
+        group_widget.setLayout(group_layout)
+
+        content_widget = content()
+        content_widget._build(self.context)
+
+        group_layout.addWidget(content_widget)
 
 
     def add_slider(self, label, option, minimum=None, maximum=None, interval=None):
@@ -311,72 +323,45 @@ class PlotCanvas(QtWidgets.QWidget):
 
 
 
+class PlotSettings(Widget):
+    def build(self, builder):
+        builder.add_spinbox(dtype=float, label=None, prefix='minimum X', option=builder.context.options['xmin'])
+        builder.add_spinbox(dtype=float, label=None, prefix='maximum X', option=builder.context.options['xmax'])
+        builder.add_spinbox(dtype=float, label=None, prefix='minimum Y', option=builder.context.options['ymin'])
+        builder.add_spinbox(dtype=float, label=None, prefix='maximum Y', option=builder.context.options['ymax'])
+        builder.add_space()
+        builder.add_slider(label='Resolution', option=builder.context.options['resolution'], minimum=10, maximum=100, interval=2)
+        builder.add_space()
+        builder.add_combobox(label='Color Map', items=builder.context.color_maps.values(), option=builder.context.options['cmap_idx'])
+        builder.add_stretch()
+        
 class Main(ApplicationWindow):
     def __init__(self):
-        super(Main, self).__init__(
-            title='Custom 3d plotter',
-        )
+        super(Main, self).__init__(title='Custom 3d plotter')
         self.options={}
-        self.options['xmin'] = Option(-50)
-        self.options['xmax'] = Option(50)
-        self.options['ymin'] = Option(-50)
-        self.options['ymax'] = Option(50)
-        self.options['resolution'] = Option(20)
-        self.options['cmap_idx'] = Option(0)
+        self.options['xmin'] = Option(-50.0, self.redraw)
+        self.options['xmax'] = Option(50.0, self.redraw)
+        self.options['ymin'] = Option(-50.0, self.redraw)
+        self.options['ymax'] = Option(50.0, self.redraw)
+        self.options['resolution'] = Option(20, self.redraw)
+        self.options['cmap_idx'] = Option(0, self.redraw)
         self.options['plotting_function'] = Option('x**2 + y**2')
+        self.color_maps = {
+            0 : 'viridis',
+            1 : 'plasma',
+            2 : 'inferno',
+            3 : 'magma',
+            4 : 'jet',
+            5 : 'coolwarm'}
 
     def _build_sidebar(self, builder):
-        builder.add_label('Plot Settings')
-        builder.add_textbox(
-            label=None,
-            prefix='Function to plot',
-            option=self.options['plotting_function']
-        )
-        builder.add_spinbox(
-            label=None,
-            prefix='min X',
-            option=self.options['xmin']
-        )
-        builder.add_spinbox(
-            label=None,
-            prefix='max X',
-            option=self.options['xmax']
-        )
-        builder.add_spinbox(
-            label=None,
-            prefix='min Y',
-            option=self.options['ymin']
-        )
-        builder.add_spinbox(
-            label=None,
-            prefix='max Y',
-            option=self.options['ymax']
-        )
+        builder.add_textbox(label=None, prefix='Function to plot', option=self.options['plotting_function'])
         builder.add_space()
-        builder.add_slider(
-            label='Resolution',
-            option=self.options['resolution'],
-            minimum=10,
-            maximum=100,
-            interval=2
-        )
+        builder.add_group('Plot Settings', PlotSettings)
         builder.add_space()
-        builder.add_combobox(
-            label='Color Map',
-            items=[
-                'coolwarm',
-                'jet',
-            ],
-            option=self.options['cmap_idx']
-        )
-        builder.add_space()
-        builder.add_space()
-        builder.add_space()
-        builder.add_button(
-            label='Redraw',
-            action=self.redraw
-        )
+        builder.add_button(label='Redraw', action=self.redraw)
         builder.add_stretch()
+
 
     def _draw(self, ax):
         xmin = self.options['xmin'].value
@@ -392,15 +377,10 @@ class Main(ApplicationWindow):
         plotting_function_string = self.options['plotting_function'].value
         try:
             F = eval(plotting_function_string)
-            cmap_idx = self.options['cmap_idx'].value
-            if cmap_idx == 0:
-                cmap = 'coolwarm'
-            elif cmap_idx == 1:
-                cmap = 'jet'
-
+            cmap = self.color_maps[self.options['cmap_idx'].value]
             ax.plot_surface(x, y, F, cmap=cmap, edgecolors='black', linewidth=0.25)
-
         except NameError:
             self.show_error_dialog('Oops!\n\nError plotting function')
 
-Main.run()
+if __name__ == '__main__':
+    Main.run()
