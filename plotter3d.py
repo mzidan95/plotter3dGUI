@@ -4,6 +4,7 @@ from matplotlib.figure import Figure
 from mpl_toolkits import mplot3d
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 import numpy as np
+import traceback
 
 
 sin = np.sin
@@ -380,6 +381,7 @@ class Main(ApplicationWindow):
             cmap = self.color_maps[self.options['cmap_idx'].value]
             ax.plot_surface(x, y, F, cmap=cmap, edgecolors='black', linewidth=0.25)
         except NameError:
+            traceback.print_exc()
             self.show_error_dialog('Oops!\n\nError plotting function')
 
 if __name__ == '__main__':
